@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: big-daddy-v3-web
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm run web
+    envVars:
+      - key: WEB_DOMAIN
+        value: https://your-app-name.onrender.com
+
+  - type: web
+    name: big-daddy-v3-bot
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
