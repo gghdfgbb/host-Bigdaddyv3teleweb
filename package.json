@@ -7,8 +7,8 @@
     "start": "node bot.js",
     "web": "node app.js",
     "dev": "concurrently \"npm run start\" \"npm run web\"",
-    "bot": "node bot.js",
-    "server": "node app.js",
+    "render:start": "npm run web",
+    "render:bot": "npm run start",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": ["telegram", "bot", "whatsapp", "deployment"],
