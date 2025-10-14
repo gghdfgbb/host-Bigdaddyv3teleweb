@@ -128,6 +128,37 @@ app.post('/api/admin/settings', (req, res) => {
   fs.writeFileSync('database.json', JSON.stringify(db, null, 2));
   res.json({ success: true });
 });
+// Add these routes to your existing app.js
+
+// Get blocked IPs
+app.get('/api/admin/blocked-ips', (req, res) => {
+    const db = JSON.parse(fs.readFileSync('database.json', 'utf8'));
+    res.json(db.settings.blocked_ips || {});
+});
+
+// Unblock IP
+app.post('/api/admin/unblock-ip/:ip', (req, res) => {
+    const { ip } = req.params;
+    const { unblockIP } = require('./utils/ipTracker');
+    
+    if (unblockIP(ip)) {
+        res.json({ success: true });
+    } else {
+        res.json({ success: false });
+    }
+});
+
+// Get user data
+app.get('/api/user/:userId', (req, res) => {
+    const { userId } = req.params;
+    const db = JSON.parse(fs.readFileSync('database.json', 'utf8'));
+    
+    if (db.users[userId]) {
+        res.json(db.users[userId]);
+    } else {
+        res.status(404).json({ error: 'User not found' });
+    }
+});
 
 app.delete('/api/admin/user/:userId', (req, res) => {
   const db = JSON.parse(fs.readFileSync('database.json', 'utf8'));
