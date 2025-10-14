@@ -10,8 +10,6 @@ services:
         value: 8494420933:AAFNh20zM_RHbP4ftWGcBEusD1VmcQlvg3E
       - key: ADMIN_CHAT_ID
         value: 8099343828
-      - key: PORT
-        value: 3000
       - key: NODE_ENV
         value: production
 
