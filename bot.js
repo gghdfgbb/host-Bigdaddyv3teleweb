@@ -2,69 +2,59 @@ const TelegramBot = require('node-telegram-bot-api');
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
-const { BOT_TOKEN, ADMIN_CHAT_ID, WEB_DOMAIN, PORT } = require('./config');
 
-console.log('🔧 Configuration Loaded:');
-console.log('🌐 WEB_DOMAIN:', WEB_DOMAIN);
-console.log('🔑 ADMIN_CHAT_ID:', ADMIN_CHAT_ID);
-console.log('🚀 PORT:', PORT);
+// Environment variables
+const BOT_TOKEN = process.env.BOT_TOKEN || "8494420933:AAFNh20zM_RHbP4ftWGcBEusD1VmcQlvg3E";
+const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || "8099343828";
 
-const bot = new TelegramBot(BOT_TOKEN, { polling: true });
-
-// Function to get the real domain dynamically
-function getRealDomain() {
-  // If we're in production and domain is still default, try to detect
-  if (WEB_DOMAIN.includes('your-app-name')) {
-    // Try to get from Render environment
-    if (process.env.RENDER_EXTERNAL_URL) {
-      return process.env.RENDER_EXTERNAL_URL;
-    }
-    // Try to construct from service name
-    if (process.env.RENDER_SERVICE_NAME) {
-      return `https://${process.env.RENDER_SERVICE_NAME}.onrender.com`;
-    }
+// Auto-detect web domain
+function getWebDomain() {
+  if (process.env.RENDER_EXTERNAL_URL) {
+    return process.env.RENDER_EXTERNAL_URL;
   }
-  return WEB_DOMAIN;
+  if (process.env.RENDER_SERVICE_NAME) {
+    return `https://${process.env.RENDER_SERVICE_NAME}.onrender.com`;
+  }
+  return 'http://localhost:3000';
 }
 
-const REAL_DOMAIN = getRealDomain();
-console.log('🎯 Using Domain:', REAL_DOMAIN);
+const WEB_DOMAIN = getWebDomain();
 
-// Keep-alive function
+console.log('🚀 Starting Big Daddy V3 Bot...');
+console.log('🌐 Web Domain:', WEB_DOMAIN);
+console.log('👑 Admin ID:', ADMIN_CHAT_ID);
+
+const bot = new TelegramBot(BOT_TOKEN, { 
+  polling: true,
+  request: {
+    timeout: 10000
+  }
+});
+
+// Keep web service alive
 function startKeepAlive() {
-  const endpoints = [
-    `${REAL_DOMAIN}/`,
-    `${REAL_DOMAIN}/health`,
-    `${REAL_DOMAIN}/ping`
-  ];
-
-  const pingEndpoint = async (endpoint) => {
+  const pingWeb = async () => {
     try {
-      const response = await axios.get(endpoint, { timeout: 10000 });
-      console.log(`✅ ${endpoint} - Status: ${response.status}`);
-      return true;
+      const response = await axios.get(`${WEB_DOMAIN}/health`, { timeout: 10000 });
+      console.log(`✅ Web service ping: ${response.status} - ${new Date().toLocaleTimeString()}`);
     } catch (error) {
-      console.log(`❌ ${endpoint} - Error: ${error.message}`);
-      return false;
+      console.log(`❌ Web service ping failed: ${error.message}`);
     }
   };
 
-  // Ping immediately on startup
-  console.log('🔄 Starting initial ping...');
-  endpoints.forEach(pingEndpoint);
+  // Ping immediately
+  pingWeb();
   
   // Ping every 5 minutes
-  setInterval(() => {
-    console.log(`🔄 Keep-alive ping at ${new Date().toLocaleTimeString()}`);
-    endpoints.forEach(pingEndpoint);
-  }, 5 * 60 * 1000);
-
-  console.log('🔄 Keep-alive system started');
+  setInterval(pingWeb, 5 * 60 * 1000);
+  
+  console.log('🔄 Bot keep-alive started');
 }
 
+// Database manager
 class DatabaseManager {
   constructor() {
-    this.dbPath = path.join(__dirname, 'database.json');
+    this.dbPath = 'database.json';
     this.loadDatabase();
   }
 
@@ -73,25 +63,12 @@ class DatabaseManager {
       if (fs.existsSync(this.dbPath)) {
         const data = fs.readFileSync(this.dbPath, 'utf8');
         this.db = JSON.parse(data);
+        console.log('✅ Database loaded successfully');
       } else {
-        this.db = {
-          users: {},
-          admins: [ADMIN_CHAT_ID],
-          settings: {
-            force_join: [],
-            max_accounts_per_ip: 3,
-            blocked_ips: {}
-          },
-          statistics: {
-            total_users: 0,
-            total_accounts: 0,
-            blocked_users: 0
-          }
-        };
-        this.saveDatabase();
+        this.initializeDefaultDB();
       }
     } catch (error) {
-      console.error('Database load error:', error);
+      console.error('❌ Database load error:', error);
       this.initializeDefaultDB();
     }
   }
@@ -112,53 +89,44 @@ class DatabaseManager {
       }
     };
     this.saveDatabase();
+    console.log('✅ Default database initialized');
   }
 
   saveDatabase() {
     try {
       fs.writeFileSync(this.dbPath, JSON.stringify(this.db, null, 2));
     } catch (error) {
-      console.error('Database save error:', error);
+      console.error('❌ Database save error:', error);
     }
   }
 
-  async checkUserJoinedChannels(userId) {
+  shouldForceJoin() {
     const forceJoin = this.db.settings.force_join;
-    
-    if (!forceJoin || forceJoin.length === 0) {
-      return true;
-    }
-    
-    const validChannels = forceJoin.filter(ch => ch.id && ch.id.startsWith('-'));
-    
-    if (validChannels.length === 0) {
-      return true;
-    }
-    
-    for (const channel of validChannels) {
+    return forceJoin && forceJoin.length > 0 && forceJoin.some(ch => ch.id && ch.id.startsWith('-'));
+  }
+
+  async checkUserJoinedChannels(userId) {
+    if (!this.shouldForceJoin()) return true;
+
+    const forceJoin = this.db.settings.force_join;
+    for (const channel of forceJoin) {
       try {
         const chatMember = await bot.getChatMember(channel.id, userId);
         if (chatMember.status === 'left' || chatMember.status === 'kicked') {
           return false;
         }
       } catch (error) {
-        console.error(`Error checking channel ${channel.id}:`, error.message);
+        console.error(`❌ Channel check error for ${channel.id}:`, error.message);
       }
     }
     return true;
-  }
-
-  shouldForceJoin() {
-    const forceJoin = this.db.settings.force_join;
-    if (!forceJoin || forceJoin.length === 0) return false;
-    return forceJoin.some(ch => ch.id && ch.id.startsWith('-'));
   }
 
   addUser(userId, userData) {
     if (!this.db.users[userId]) {
       this.db.users[userId] = {
         ...userData,
-        ip: this.trackIP(userId),
+        ip: `192.168.1.${parseInt(userId) % 255}`,
         created_at: new Date().toISOString(),
         status: 'active'
       };
@@ -170,10 +138,6 @@ class DatabaseManager {
     return false;
   }
 
-  trackIP(userId) {
-    return `192.168.1.${parseInt(userId) % 255}`;
-  }
-
   getUser(userId) {
     return this.db.users[userId];
   }
@@ -182,79 +146,71 @@ class DatabaseManager {
 const db = new DatabaseManager();
 const userStates = new Map();
 
-// FIXED: Using REAL_DOMAIN instead of WEB_DOMAIN
-async function handleForceJoin(userId, chatId) {
-  if (!db.shouldForceJoin()) {
-    return true;
-  }
-
-  const hasJoined = await db.checkUserJoinedChannels(userId);
-  
-  if (!hasJoined) {
-    const validChannels = db.db.settings.force_join.filter(ch => ch.id && ch.name);
-    const keyboard = {
-      inline_keyboard: [
-        ...validChannels.map(channel => [
-          { text: `Join ${channel.name}`, url: channel.invite_link || `https://t.me/${channel.id}` }
-        ]),
-        [{ text: "✅ I've Joined", callback_data: `check_join_${userId}` }]
-      ]
-    };
-    
-    await bot.sendMessage(chatId, 
-      `🔒 **Access Required**\n\n` +
-      `To use **Big Daddy V3**, you must join our official channels:\n\n` +
-      `${validChannels.map(ch => `• ${ch.name}`).join('\n')}\n\n` +
-      `After joining, click "I've Joined" to verify.`,
-      { parse_mode: 'Markdown', reply_markup: keyboard }
-    );
-    return false;
-  }
-  return true;
-}
-
-// FIXED: Using REAL_DOMAIN for all URLs
+// Start command
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
   const userId = msg.from.id.toString();
   
   try {
+    // Admin access
     if (userId === ADMIN_CHAT_ID) {
-      const adminUrl = `${REAL_DOMAIN}/admin`;
+      const adminUrl = `${WEB_DOMAIN}/admin`;
       await bot.sendMessage(chatId,
-        `👑 **Admin Panel - Big Daddy V3**\n\n` +
-        `📊 Statistics:\n` +
+        `👑 *Admin Panel - Big Daddy V3*\n\n` +
+        `📊 *Statistics:*\n` +
         `• Users: ${db.db.statistics.total_users}\n` +
         `• Accounts: ${db.db.statistics.total_accounts}\n\n` +
-        `🌐 **Web Dashboard:**\n${adminUrl}\n\n` +
-        `Use /stats for more details.`,
+        `🌐 *Web Dashboard:* ${adminUrl}\n\n` +
+        `Use /stats for detailed statistics`,
         { parse_mode: 'Markdown' }
       );
       return;
     }
 
-    const canProceed = await handleForceJoin(userId, chatId);
-    if (!canProceed) return;
+    // Force join check
+    if (db.shouldForceJoin()) {
+      const hasJoined = await db.checkUserJoinedChannels(userId);
+      if (!hasJoined) {
+        const validChannels = db.db.settings.force_join.filter(ch => ch.id && ch.name);
+        const keyboard = {
+          inline_keyboard: [
+            ...validChannels.map(channel => [
+              { text: `Join ${channel.name}`, url: channel.invite_link || `https://t.me/${channel.id}` }
+            ]),
+            [{ text: "✅ I've Joined", callback_data: `check_join_${userId}` }]
+          ]
+        };
+        
+        await bot.sendMessage(chatId, 
+          `🔒 *Access Required*\n\n` +
+          `Please join our channels:\n\n` +
+          `${validChannels.map(ch => `• ${ch.name}`).join('\n')}\n\n` +
+          `Then click "I've Joined"`,
+          { parse_mode: 'Markdown', reply_markup: keyboard }
+        );
+        return;
+      }
+    }
 
+    // User flow
     const user = db.getUser(userId);
     if (user) {
-      const dashboardUrl = `${REAL_DOMAIN}/dashboard?user=${userId}`;
+      const dashboardUrl = `${WEB_DOMAIN}/dashboard?user=${userId}`;
       await bot.sendMessage(chatId,
-        `👋 **Welcome back ${user.name}!**\n\n` +
-        `🌐 **Dashboard:** ${dashboardUrl}\n\n` +
-        `Use /account for your account details.`,
+        `👋 *Welcome back ${user.name}!*\n\n` +
+        `🌐 *Dashboard:* ${dashboardUrl}`,
         { parse_mode: 'Markdown' }
       );
     } else {
       userStates.set(userId, { step: 'name' });
       await bot.sendMessage(chatId,
-        `🎉 **Welcome to Big Daddy V3!**\n\n` +
-        `Please enter your **full name** to create account:`,
+        `🎉 *Welcome to Big Daddy V3!*\n\n` +
+        `Please enter your *full name* to register:`,
         { parse_mode: 'Markdown' }
       );
     }
   } catch (error) {
-    console.error('Start command error:', error);
+    console.error('❌ Start command error:', error);
     await bot.sendMessage(chatId, '❌ Service error. Please try again.');
   }
 });
