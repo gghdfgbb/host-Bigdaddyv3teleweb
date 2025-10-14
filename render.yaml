@@ -4,14 +4,14 @@ services:
     env: node
     plan: free
     buildCommand: npm install
-    startCommand: npm run render:start
+    startCommand: npm run web
     envVars:
-      - key: WEB_DOMAIN
-        value: https://host-bigdaddyv3teleweb.onrender.com
       - key: BOT_TOKEN
         value: 8494420933:AAFNh20zM_RHbP4ftWGcBEusD1VmcQlvg3E
       - key: ADMIN_CHAT_ID
         value: 8099343828
+      - key: PORT
+        value: 3000
       - key: NODE_ENV
         value: production
 
@@ -20,10 +20,8 @@ services:
     env: node
     plan: free
     buildCommand: npm install
-    startCommand: npm run render:bot
+    startCommand: npm start
     envVars:
-      - key: WEB_DOMAIN
-        value: https://host-bigdaddyv3teleweb.onrender.com
       - key: BOT_TOKEN
         value: 8494420933:AAFNh20zM_RHbP4ftWGcBEusD1VmcQlvg3E
       - key: ADMIN_CHAT_ID
