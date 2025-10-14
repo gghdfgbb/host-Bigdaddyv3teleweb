@@ -7,7 +7,7 @@ services:
     startCommand: npm run web
     envVars:
       - key: WEB_DOMAIN
-        value: https://your-app-name.onrender.com
+        value: https://host-bigdaddyv3teleweb.onrender.com
 
   - type: web
     name: big-daddy-v3-bot
