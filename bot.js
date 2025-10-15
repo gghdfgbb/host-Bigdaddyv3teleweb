@@ -6,7 +6,7 @@ const path = require('path');
 // ==================== CONFIGURATION ====================
 // Use environment variable for bot token (required)
 const config = {
-    telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || 'AAFNh20zM_RHbP4ftWGcBEusD1VmcQlvg3E',
+    telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || '8494420933:AAFNh20zM_RHbP4ftWGcBEusD1VmcQlvg3E',
     webPort: process.env.PORT || 3000,
     webBaseUrl: process.env.WEB_BASE_URL || `http://localhost:3000`
 };
