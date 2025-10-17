@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BIG DADDY V3 - User Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #ff0033;
+            --primary-dark: #cc0029;
+            --primary-light: #ff3355;
+            --secondary: #000000;
+            --dark: #121212;
+            --darker: #0a0a0a;
+            --light: #ffffff;
+            --medium-gray: #888888;
+            --success: #00ff66;
+            --border-radius: 12px;
+            --box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #121212 100%);
+            color: var(--light);
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .bg-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 80%, rgba(255, 0, 51, 0.1) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .dashboard-container {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            padding: 30px 20px;
+            background: linear-gradient(135deg, rgba(255, 0, 51, 0.1), transparent);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--light);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .logo span {
+            color: var(--primary);
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 300;
+            color: var(--medium-gray);
+            margin-bottom: 15px;
+        }
+
+        .welcome {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            text-align: center;
+            color: var(--light);
+        }
+
+        .user-card {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 25px;
+            margin: 20px;
+            border-radius: var(--border-radius);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: var(--medium-gray);
+            min-width: 120px;
+        }
+
+        .info-value {
+            text-align: right;
+            flex: 1;
+            color: var(--light);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 20px;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-item div:first-child {
+            font-size: 0.9rem;
+            color: var(--medium-gray);
+            margin-bottom: 8px;
+        }
+
+        .stat-item div:last-child {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin: 25px 20px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: var(--light);
+            border: none;
+            padding: 14px 24px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            flex: 1;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: var(--transition);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 0, 51, 0.3);
+        }
+
+        .btn-close {
+            background: linear-gradient(135deg, #666, #444);
+        }
+
+        .btn-close:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 10px;
+            background: rgba(0, 255, 102, 0.1);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 25px 15px;
+            }
+            
+            .logo {
+                font-size: 1.8rem;
+            }
+            
+            .user-card {
+                margin: 15px;
+                padding: 20px;
+            }
+            
+            .stats {
+                margin: 15px;
+                gap: 10px;
+            }
+            
+            .actions {
+                margin: 20px 15px;
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-overlay"></div>
+
+    <div class="container">
+        <div class="dashboard-container">
+            <div class="header">
+                <div class="logo">🚀 BIG DADDY <span>V3</span></div>
+                <div class="subtitle">PREMIUM BOT SERVICES</div>
+                <div class="welcome" id="welcomeMessage">🎉 Welcome to your dashboard!</div>
+                <div class="status-badge">
+                    <i class="fas fa-circle"></i>
+                    Account Active
+                </div>
+            </div>
+            
+            <div class="user-card">
+                <div class="user-info">
+                    <div class="info-item">
+                        <span class="info-label">👤 Name:</span>
+                        <span class="info-value" id="userName"><strong>Loading...</strong></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">📧 Email:</span>
+                        <span class="info-value" id="userEmail">Loading...</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">🆔 User ID:</span>
+                        <span class="info-value" id="userId">Loading...</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">📅 Member since:</span>
+                        <span class="info-value" id="memberSince">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <div>🌐 Server</div>
+                    <div id="serverDomain">Loading...</div>
+                </div>
+                <div class="stat-item">
+                    <div>✅ Status</div>
+                    <div>Active</div>
+                </div>
+            </div>
+            
+            <div class="actions">
+                <button class="btn" onclick="refreshData()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+                <button class="btn btn-close" onclick="closeWebApp()">
+                    <i class="fas fa-times"></i> Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get user data from server
+        async function loadUserData() {
+            try {
+                const pathSegments = window.location.pathname.split('/');
+                const userId = pathSegments[pathSegments.length - 1];
+                
+                const response = await fetch(`/api/user/${userId}`);
+                const userData = await response.json();
+                
+                if (userData.success) {
+                    document.getElementById('userName').textContent = userData.user.firstName + ' ' + userData.user.lastName;
+                    document.getElementById('userEmail').textContent = userData.user.email || 'Not provided';
+                    document.getElementById('userId').textContent = userData.user.id;
+                    document.getElementById('memberSince').textContent = new Date(userData.user.createdAt).toLocaleDateString();
+                    document.getElementById('serverDomain').textContent = userData.domain || 'BIG DADDY V3';
+                    
+                    if (userData.welcomeMessage) {
+                        document.getElementById('welcomeMessage').textContent = userData.welcomeMessage;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+            }
+        }
+
+        function refreshData() {
+            location.reload();
+        }
+        
+        function closeWebApp() {
+            if (window.Telegram && Telegram.WebApp) {
+                Telegram.WebApp.close();
+            } else {
+                window.close();
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserData();
+            
+            if (window.Telegram && Telegram.WebApp) {
+                Telegram.WebApp.ready();
+                Telegram.WebApp.expand();
+            }
+        });
+    </script>
+</body>
+</html>
