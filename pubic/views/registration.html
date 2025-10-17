@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Big Daddy V3 - Create Account</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/registration.css">
+</head>
+<body>
+    <div class="bg-overlay"></div>
+
+    <div class="container">
+        <div class="auth-container">
+            <div class="logo-container">
+                <div class="version-badge">V3 PRO</div>
+                <h1>BIG DADDY <span>V3</span></h1>
+                <p>PREMIUM BOT SERVICES</p>
+            </div>
+
+            <div class="form-wrapper">
+                <div class="form-header">
+                    <h2>Create Your Account</h2>
+                    <div class="form-divider"></div>
+                </div>
+
+                <div id="message" class="message"></div>
+                <div id="loading" class="loading">
+                    <div class="spinner"></div>
+                    <div>Processing...</div>
+                </div>
+
+                <form id="registrationForm">
+                    <div class="input-group">
+                        <input type="text" id="firstName" name="firstName" placeholder=" " required>
+                        <label for="firstName">First Name</label>
+                    </div>
+                    
+                    <div class="input-group">
+                        <input type="text" id="lastName" name="lastName" placeholder=" " required>
+                        <label for="lastName">Last Name</label>
+                    </div>
+                    
+                    <div class="input-group">
+                        <input type="email" id="email" name="email" placeholder=" " required>
+                        <label for="email">Email Address</label>
+                    </div>
+
+                    <button type="submit" class="btn" id="submitBtn">
+                        <span>Create Account</span>
+                    </button>
+                </form>
+
+                <div class="form-footer">
+                    <p>By creating an account, you agree to our Terms of Service</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple JavaScript - keep it inline since we're reusing your existing logic
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('registrationForm');
+            const message = document.getElementById('message');
+            const loading = document.getElementById('loading');
+            const submitBtn = document.getElementById('submitBtn');
+
+            // Get userId from URL
+            const pathSegments = window.location.pathname.split('/');
+            const userId = pathSegments[pathSegments.length - 1];
+
+            function showMessage(text, type) {
+                message.textContent = text;
+                message.className = 'message ' + type;
+                message.style.display = 'block';
+            }
+
+            function showLoading(show) {
+                loading.style.display = show ? 'block' : 'none';
+                submitBtn.disabled = show;
+                if (show) {
+                    submitBtn.innerHTML = '<div class="spinner"></div> Processing...';
+                } else {
+                    submitBtn.innerHTML = '<span>Create Account</span>';
+                }
+            }
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const formData = new FormData(form);
+                const data = {
+                    firstName: formData.get('firstName').trim(),
+                    lastName: formData.get('lastName').trim(),
+                    email: formData.get('email').trim()
+                };
+
+                // Validation
+                if (!data.firstName || !data.lastName || !data.email) {
+                    showMessage('Please fill in all required fields', 'error');
+                    return;
+                }
+
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(data.email)) {
+                    showMessage('Please enter a valid email address', 'error');
+                    return;
+                }
+
+                showLoading(true);
+
+                try {
+                    const response = await fetch(`/register/${userId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showMessage(result.message, 'success');
+                        setTimeout(() => {
+                            if (result.redirectUrl) {
+                                window.location.href = result.redirectUrl;
+                            } else if (window.Telegram && Telegram.WebApp) {
+                                Telegram.WebApp.close();
+                            }
+                        }, 2000);
+                    } else {
+                        showMessage(result.error, 'error');
+                    }
+                    
+                } catch (error) {
+                    showMessage('Network error. Please try again.', 'error');
+                } finally {
+                    showLoading(false);
+                }
+            });
+
+            // Initialize Telegram Web App if available
+            if (window.Telegram && Telegram.WebApp) {
+                Telegram.WebApp.ready();
+                Telegram.WebApp.expand();
+            }
+        });
+    </script>
+</body>
+</html>
