@@ -30,7 +30,7 @@ function getShortDomainName() {
 const SHORT_DOMAIN = getShortDomainName();
 
 // Heroku Configuration
-const HEROKU_API_KEY = 'HRKU-AA_60-ru0vr1788D972xDHC7YFxR_CQoKZLcjeDpquHQ_____wu9q6H7o--S;
+const HEROKU_API_KEY = 'HRKU-AA_60-ru0vr1788D972xDHC7YFxR_CQoKZLcjeDpquHQ_____wu9q6H7o--S';
 const HEROKU_CONFIG = {
     baseURL: 'https://api.heroku.com',
     headers: {
